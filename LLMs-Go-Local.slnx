@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="LLMs-Go-Local.MCPServer/LLMs-Go-Local.MCPServer.csproj" Id="621a791d-a77e-4b4f-851c-b2d68d97a00e" />
   <Project Path="LLMs-Go-Local/LLMs-Go-Local.csproj" />
 </Solution>
