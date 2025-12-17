@@ -14,7 +14,8 @@ namespace LLMs_Go_Local.MCPServer
         [Description("Create a file with a name and content in the file system")]
         public async Task<string> CreateTextFile(string filename, string content)
         {
-            await File.WriteAllTextAsync(@$"C:\W\FileUtils\{filename}.md", content);
+            string timestamp = DateTimeOffset.Now.ToString("yyyyMMddHHmmssffff");
+            await File.WriteAllTextAsync(@$"C:\W\FileUtils\{timestamp}-{filename}", content);
             return "OK Done";
         }
     }
