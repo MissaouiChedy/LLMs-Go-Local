@@ -1,8 +1,10 @@
-﻿using OllamaSharp;
-using System.Text;
-using Microsoft.Agents.AI;
+﻿using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;
+using OllamaSharp;
+using System.Text;
+using System.Text.Json;
 
 await using McpClient fileTools = await McpClient
                 .CreateAsync(new StdioClientTransport(new StdioClientTransportOptions()
@@ -12,6 +14,15 @@ await using McpClient fileTools = await McpClient
                 }));
 
 IList<McpClientTool> toolsInFileUtilMcp = await fileTools.ListToolsAsync();
+
+string mainAgentInstructions = await File.ReadAllTextAsync("MainAgentInstructions.md");
+
+using OllamaApiClient mainChatClient = new(new Uri("http://localhost:11434"), "qwen3:1.7b");
+
+AIAgent mainAgent = new ChatClientAgent(
+    mainChatClient,
+    instructions: mainAgentInstructions,
+    name: "MainAgent");
 
 string blogWriterInstructions = await File.ReadAllTextAsync("BlogWriterAgentInstructions.md");
 
@@ -26,10 +37,29 @@ AIAgent blogWriterAgent = new ChatClientAgent(
     .Use(FunctionCallMiddleware)
     .Build();
 
+string codeSampleInstructions = await File.ReadAllTextAsync("CodeSampleAgentInstructions.md");
+
+using OllamaApiClient codeSampleChatClient = new(new Uri("http://localhost:11434"), "qwen3:1.7b");
+
+AIAgent codeSampleAgent = new ChatClientAgent(
+    codeSampleChatClient,
+    instructions: codeSampleInstructions,
+    name: "CodeSampleAgent",
+    tools: toolsInFileUtilMcp.Cast<AITool>().ToList())
+    .AsBuilder()
+    .Use(FunctionCallMiddleware)
+    .Build();
+
+
+List<ChatMessage> messages = [];
+
 bool continueLoop = true;
 while (continueLoop)
 {
-    AgentThread thread = blogWriterAgent.GetNewThread();
+    Workflow workflow = AgentWorkflowBuilder.CreateHandoffBuilderWith(mainAgent)
+                .WithHandoffs(mainAgent, [blogWriterAgent, codeSampleAgent])
+                .WithHandoffs([blogWriterAgent, codeSampleAgent], mainAgent)
+                .Build();
     Console.Write("Prompt >> ");
     string prompt = Console.ReadLine() ?? "exit";
     if (prompt == "exit" || string.IsNullOrWhiteSpace(prompt))
@@ -37,14 +67,50 @@ while (continueLoop)
         continueLoop = false;
         continue;
     }
-    //"Provide a blog post about abstract classes in C# and save the blog post into a file named post.md"
-    var streamingResponse = blogWriterAgent.RunStreamingAsync(prompt, thread);
+
+    
+    messages.Add(new(Microsoft.Extensions.AI.ChatRole.User, prompt));
+    messages.AddRange(await RunWorkflowAsync(workflow, messages));
+    
     Console.WriteLine();
-    await foreach (var responseUpdate in streamingResponse)
+}
+
+async Task<List<ChatMessage>> RunWorkflowAsync(Workflow workflow, List<ChatMessage> messages)
+{
+    string? lastExecutorId = null;
+
+    StreamingRun run = await InProcessExecution.StreamAsync(workflow, messages);
+    await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
+    await foreach (WorkflowEvent @event in run.WatchStreamAsync())
     {
-        Console.Write(responseUpdate.Text);
+        switch (@event)
+        {
+            case AgentRunUpdateEvent e:
+                {
+                    if (e.ExecutorId != lastExecutorId)
+                    {
+                        lastExecutorId = e.ExecutorId;
+                        Console.WriteLine();
+                        Console.WriteLine($">>>>>> {e.Update.AuthorName ?? e.ExecutorId}");
+                    }
+
+                    Console.Write(e.Update.Text);
+                    if (e.Update.Contents.OfType<FunctionCallContent>().FirstOrDefault() is FunctionCallContent call)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine($">>>>>> Call '{call.Name}' with arguments: {JsonSerializer.Serialize(call.Arguments)}]");
+                    }
+
+                    break;
+                }
+            case WorkflowOutputEvent output:
+                Console.WriteLine();
+                Console.WriteLine("-------------------------");
+                return output.As<List<ChatMessage>>()!;
+        }
     }
-    Console.WriteLine();
+
+    return [];
 }
 
 async ValueTask<object?> FunctionCallMiddleware(AIAgent callingAgent, FunctionInvocationContext context, Func<FunctionInvocationContext, CancellationToken, ValueTask<object?>> next, CancellationToken cancellationToken)
