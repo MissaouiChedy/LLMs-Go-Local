@@ -1,33 +1,15 @@
 # LLMs-Go-Local
-In this workshop, we will explore with a hands on approach how to deploy and use local LLMs with C#, the Microsoft Agent Framework and Foundry Local.
+In this workshop, we will explore with a hands on approach how to deploy and use local LLMs with C#, the Microsoft Agent Framework and Ollama.
 
-## Context
-- Why Local LLM ?
-- Hardware Requirements
+## Pre-Requisites
 
-## Overview & Expectations
-- Examples are very basic
+- [Visual Studio 2026](https://visualstudio.microsoft.com/downloads/) or Alternatively [VS Code](https://code.visualstudio.com/) with the [C# Dev Kit Extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) 
 
-## Let's Get Installed
-- Foundry Local
-- VS 2026
-- 
-## Basic Agent
-- Setup Foundry Local Model
-- Basic Agent
-- Instructions
-- Parameters
-- Reasoning vs Output
 
-## Actions !
-- MCP Server
-
-## Agent Workflows
-- Agent Workflows
-
-## Human in the Loop
-- Human in the loop features
-
-## Closing
-
-- You can use with AI Foundry
+- [Ollama](https://ollama.com/download)  
+    - Verify installation: `ollama --version`
+    - `qwen3:1.7b` model in Ollama  
+        - Pull the model into Ollama:
+            `ollama pull qwen3:1.7b`  
+        - Verify the model is available:
+            `ollama list` (look for `qwen3:1.7b`)
