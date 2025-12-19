@@ -60,6 +60,7 @@ while (continueLoop)
                 .WithHandoffs(mainAgent, [blogWriterAgent, codeSampleAgent])
                 .WithHandoffs([blogWriterAgent, codeSampleAgent], mainAgent)
                 .Build();
+
     Console.Write("Prompt >> ");
     string prompt = Console.ReadLine() ?? "exit";
     if (prompt == "exit" || string.IsNullOrWhiteSpace(prompt))
@@ -105,7 +106,7 @@ async Task<List<ChatMessage>> RunWorkflowAsync(Workflow workflow, List<ChatMessa
                 }
             case WorkflowOutputEvent output:
                 Console.WriteLine();
-                Console.WriteLine("-------------------------");
+                Console.WriteLine("~~~~~~~~~~~~~~~~~~~~~~");
                 return output.As<List<ChatMessage>>()!;
         }
     }
@@ -113,7 +114,11 @@ async Task<List<ChatMessage>> RunWorkflowAsync(Workflow workflow, List<ChatMessa
     return [];
 }
 
-async ValueTask<object?> FunctionCallMiddleware(AIAgent callingAgent, FunctionInvocationContext context, Func<FunctionInvocationContext, CancellationToken, ValueTask<object?>> next, CancellationToken cancellationToken)
+async ValueTask<object?> FunctionCallMiddleware(AIAgent callingAgent,
+    FunctionInvocationContext context, 
+    Func<FunctionInvocationContext, CancellationToken, ValueTask<object?>> next,
+    CancellationToken cancellationToken
+    )
 {
     StringBuilder functionCallDetails = new();
     functionCallDetails.Append($"Tool Call: '{context.Function.Name}'");
