@@ -13,3 +13,6 @@ In this workshop, we will explore with a hands on approach how to deploy and use
             `ollama pull qwen3:1.7b`  
         - Verify the model is available:
             `ollama list` (look for `qwen3:1.7b`)
+
+## References
+- https://github.com/rwjdk/MicrosoftAgentFrameworkSamples
