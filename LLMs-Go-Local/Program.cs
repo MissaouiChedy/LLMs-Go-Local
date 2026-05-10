@@ -56,11 +56,12 @@ List<ChatMessage> messages = [];
 bool continueLoop = true;
 while (continueLoop)
 {
+    #pragma warning disable MAAIW001
     Workflow workflow = AgentWorkflowBuilder.CreateHandoffBuilderWith(mainAgent)
                 .WithHandoffs(mainAgent, [blogWriterAgent, codeSampleAgent])
                 .WithHandoffs([blogWriterAgent, codeSampleAgent], mainAgent)
                 .Build();
-
+    #pragma warning restore MAAIW001
     Console.Write("Prompt >> ");
     string prompt = Console.ReadLine() ?? "exit";
     if (prompt == "exit" || string.IsNullOrWhiteSpace(prompt))
@@ -80,13 +81,13 @@ async Task<List<ChatMessage>> RunWorkflowAsync(Workflow workflow, List<ChatMessa
 {
     string? lastExecutorId = null;
 
-    StreamingRun run = await InProcessExecution.StreamAsync(workflow, messages);
+    StreamingRun run = await InProcessExecution.RunStreamingAsync(workflow, messages);
     await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
     await foreach (WorkflowEvent @event in run.WatchStreamAsync())
     {
         switch (@event)
         {
-            case AgentRunUpdateEvent e:
+            case AgentResponseUpdateEvent e:
                 {
                     if (e.ExecutorId != lastExecutorId)
                     {

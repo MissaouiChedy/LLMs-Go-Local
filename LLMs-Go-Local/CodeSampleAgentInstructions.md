@@ -6,14 +6,12 @@ When using library dependencies always use the language's default package manage
 
 Sample project should be saved under a directory named after the subject
 
+Sample code files should be generated a specific programming language
+
 You should Generate a README File in the coding project sample with the following structure:
 - Description
 - Pre-Requisites
 - How to Run the Sample
 - Contribution Guide
 
-For example when requested for a code project sample demonstrating const in C# you should generate the following directory structure:
-const-csharp (Directory)
-  |- README.md (sub-file)
-  |- Program.cs (sub-file)
-  |- const-csharp.csproj (sub-file)
+Code Sample file path should avoid containing slashes or back-slashes
